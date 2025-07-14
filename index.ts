@@ -16,6 +16,17 @@ const gjPerimeter = rawPerimeterGeojson as GeoJSON.GeoJSON<any, any>;
 const gjProvinces = rawProvincesGeojson as GeoJSON.GeoJSON<any, any>;
 const gjKabupaten = rawKabupatenGeojson as GeoJSON.GeoJSON<any, any>;
 
+const kabupatenLabelPoints = {
+  type: 'FeatureCollection' as const,
+  features: gjKabupaten.features.map((kabupaten: any) => {
+    const centroid = turf.centroid(kabupaten);
+    return {
+      ...centroid,
+      properties: kabupaten.properties,
+    };
+  }),
+};
+
 const provinceLabelPoints = {
   type: 'FeatureCollection' as const,
   features: gjProvinces.features.map((province: any) => {
@@ -72,7 +83,7 @@ function generatePoints(targetCount: number) {
         if (province.geometry.type === 'Polygon' || province.geometry.type === 'MultiPolygon') {
           if (turf.booleanPointInPolygon(point as any, province)) {
             provinceName = province.properties?.shapeName || 'Unknown';
-            break; // Found the Kabupaten, no need to check others
+            break; // Found the Province, no need to check others
           }
         }
       }
@@ -158,24 +169,11 @@ map.once('load', () => {
       'line-color': 'black',
       'line-width': 0.5,
       'line-opacity': 0.25,
-      // 'fill-color': '#08a',
-      // 'fill-opacity': [
-      //   'case',
-      //   ['boolean', ['feature-state', 'hover'], false],
-      //   0.75, // Opacity when hovered
-      //   0.1, // Default opacity
-      // ],
-      // 'fill-color': {
-      //   type: 'categorical',
-      //   property: 'shapeName',
-      //   stops: Object.entries(kabupatenColors).map(([kabupaten, color]) => [kabupaten, color]),
-      //   default: '#888',
-      // },
     },
   });
 
   // points
-  const points = generatePoints(10000); // actually creates 9669 points
+  const points = generatePoints(100000); // actually creates 9669 points
   map.addSource('points', {
     type: 'geojson',
     data: points,
@@ -185,10 +183,55 @@ map.once('load', () => {
     type: 'circle',
     source: 'points',
     paint: {
-      'circle-radius': 1.5,
+      'circle-radius': [
+        'interpolate',
+        ['exponential', 1.5], // base for exponential curve
+        ['zoom'],
+        4,
+        1,
+        8,
+        3,
+      ],
       'circle-stroke-width': 3,
       'circle-stroke-opacity': 0,
       'circle-color': '#be123c',
+      'circle-opacity': 0.75,
+    },
+  });
+
+  // Add kabupaten labels
+  map.addSource('kabupaten-labels', {
+    type: 'geojson',
+    data: kabupatenLabelPoints,
+  });
+
+  map.addLayer({
+    id: 'kabupaten-labels',
+    type: 'symbol',
+    source: 'kabupaten-labels',
+    layout: {
+      'text-field': ['get', 'shapeName'],
+      'text-padding': 3,
+      'text-size': [
+        'interpolate',
+        ['exponential', 1.5], // base for exponential curve
+        ['zoom'],
+        4,
+        9,
+        8,
+        12,
+      ],
+      'text-allow-overlap': false,
+      'text-ignore-placement': false,
+      'symbol-placement': 'point',
+      'symbol-avoid-edges': true,
+      'text-optional': true,
+    },
+    paint: {
+      'text-color': '#222',
+      'text-halo-color': '#fff',
+      'text-halo-width': 1,
+      'text-opacity': ['step', ['zoom'], 0, 6, 1],
     },
   });
 
@@ -203,31 +246,20 @@ map.once('load', () => {
     type: 'symbol',
     source: 'province-labels',
     layout: {
+      'text-font': ['Open Sans Semibold'],
       'text-field': ['get', 'shapeName'], // Get the province name from properties
-      'text-size': [
-        'interpolate',
-        ['linear'],
-        ['zoom'],
-        4,
-        10, // At zoom 4, text size is 10
-        8,
-        14, // At zoom 8, text size is 14
-        12,
-        18, // At zoom 12, text size is 18
-      ],
+      'text-padding': 4,
+      'text-size': 12,
       'text-allow-overlap': false,
       'text-ignore-placement': false,
       'symbol-placement': 'point',
       'symbol-avoid-edges': true,
-      'text-pitch-alignment': 'viewport',
-      'text-rotation-alignment': 'viewport',
       'text-optional': true,
     },
     paint: {
-      'text-color': '#333',
-      'text-halo-color': '#ffffffaa',
+      'text-color': 'black',
+      'text-halo-color': '#fff',
       'text-halo-width': 1,
-      'text-halo-blur': 1,
     },
   });
 
