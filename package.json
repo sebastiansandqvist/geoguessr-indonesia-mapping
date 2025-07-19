@@ -4,13 +4,18 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@types/bun": "1.2.18"
+    "@types/bun": "1.2.18",
+    "drizzle-kit": "0.31.4"
   },
   "peerDependencies": {
     "typescript": "5.8.3"
   },
   "dependencies": {
+    "@googlemaps/google-maps-services-js": "3.4.2",
+    "@libsql/client": "0.15.10",
     "@turf/turf": "7.2.0",
+    "better-sqlite3": "12.2.0",
+    "drizzle-orm": "0.44.3",
     "maplibre-gl": "5.6.1"
   }
 }

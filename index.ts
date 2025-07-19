@@ -1,5 +1,6 @@
 import * as turf from '@turf/turf';
-import maplibregl from 'maplibre-gl';
+import { appendFile } from 'node:fs/promises';
+// import maplibregl from 'maplibre-gl';
 import rawPerimeterGeojson from './data/indonesia.geo.json';
 import rawProvincesGeojson from './data/provinces2.geo.json';
 import rawKabupatenGeojson from './data/kabupaten.geo.json';
@@ -44,24 +45,24 @@ const provinceLabelPoints = {
 //   return acc;
 // }, {});
 
-const map = new maplibregl.Map({
-  container: 'map', // html map div id
-  style: 'https://demotiles.maplibre.org/style.json', // style URL
-  center: [117.0, -2.5], // starting position [lng, lat] centered on Indonesia
-  zoom: 4, // starting zoom level to show all of Indonesia
-});
+// const map = new maplibregl.Map({
+//   container: 'map', // html map div id
+//   style: 'https://demotiles.maplibre.org/style.json', // style URL
+//   center: [117.0, -2.5], // starting position [lng, lat] centered on Indonesia
+//   zoom: 4, // starting zoom level to show all of Indonesia
+// });
 
-function generatePoints(targetCount: number) {
+export function generatePoints(targetCount: number) {
   const bounds = turf.bbox(gjPerimeter);
   console.log({ bounds });
   const area = (bounds[2] - bounds[0]) * (bounds[3] - bounds[1]);
   console.log({ area });
   const cellSide = Math.sqrt((area / targetCount) * 2);
-  console.log({ cellSide });
+  // console.log({ cellSide });
   const grid = turf.pointGrid(bounds, cellSide, { units: 'degrees' });
-  console.log({ grid });
+  // console.log({ grid });
   const points = turf.pointsWithinPolygon(grid, gjPerimeter);
-  console.log(points);
+  // console.log(points.features.length);
   const pointsWithKabupaten = {
     type: 'FeatureCollection' as const,
     features: points.features.map((point) => {
@@ -100,7 +101,7 @@ function generatePoints(targetCount: number) {
     }),
   };
 
-  console.log(pointsWithKabupaten);
+  // console.log(pointsWithKabupaten);
   return pointsWithKabupaten;
 }
 
@@ -116,181 +117,181 @@ function generatePoints(targetCount: number) {
 //   {},
 // );
 
-const popup = new maplibregl.Popup({
-  closeButton: false,
-  closeOnClick: false,
-});
+// const popup = new maplibregl.Popup({
+//   closeButton: false,
+//   closeOnClick: false,
+// });
 
-map.once('load', () => {
-  // outline
-  // map.addSource('indonesia', {
-  //   type: 'geojson',
-  //   data: gjPerimeter,
-  // });
-  // map.addLayer({
-  //   id: 'indonesia',
-  //   type: 'fill',
-  //   source: 'indonesia',
-  //   layout: {},
-  //   paint: {
-  //     'fill-color': '#088',
-  //     'fill-opacity': 0.3,
-  //   },
-  // });
-  map.addSource('provinces', {
-    type: 'geojson',
-    data: gjProvinces,
-  });
+// map.once('load', () => {
+//   // outline
+//   // map.addSource('indonesia', {
+//   //   type: 'geojson',
+//   //   data: gjPerimeter,
+//   // });
+//   // map.addLayer({
+//   //   id: 'indonesia',
+//   //   type: 'fill',
+//   //   source: 'indonesia',
+//   //   layout: {},
+//   //   paint: {
+//   //     'fill-color': '#088',
+//   //     'fill-opacity': 0.3,
+//   //   },
+//   // });
+//   map.addSource('provinces', {
+//     type: 'geojson',
+//     data: gjProvinces,
+//   });
 
-  // Add province border layer (initially invisible)
-  map.addLayer({
-    id: 'province-border',
-    type: 'line',
-    source: 'provinces',
-    layout: {},
-    paint: {
-      'line-color': 'black',
-      'line-width': 1,
-      'line-opacity': 0.5,
-    },
-    // filter: ['==', 'shapeName', ''] // Initially match nothing
-  });
+//   // Add province border layer (initially invisible)
+//   map.addLayer({
+//     id: 'province-border',
+//     type: 'line',
+//     source: 'provinces',
+//     layout: {},
+//     paint: {
+//       'line-color': 'black',
+//       'line-width': 1,
+//       'line-opacity': 0.5,
+//     },
+//     // filter: ['==', 'shapeName', ''] // Initially match nothing
+//   });
 
-  map.addSource('kabupaten', {
-    type: 'geojson',
-    data: gjKabupaten,
-  });
-  map.addLayer({
-    id: 'kabupaten',
-    type: 'line',
-    source: 'kabupaten',
-    layout: {},
-    paint: {
-      'line-color': 'black',
-      'line-width': 0.5,
-      'line-opacity': 0.25,
-    },
-  });
+//   map.addSource('kabupaten', {
+//     type: 'geojson',
+//     data: gjKabupaten,
+//   });
+//   map.addLayer({
+//     id: 'kabupaten',
+//     type: 'line',
+//     source: 'kabupaten',
+//     layout: {},
+//     paint: {
+//       'line-color': 'black',
+//       'line-width': 0.5,
+//       'line-opacity': 0.25,
+//     },
+//   });
 
-  // points
-  const points = generatePoints(100000); // actually creates 9669 points
-  map.addSource('points', {
-    type: 'geojson',
-    data: points,
-  });
-  map.addLayer({
-    id: 'points',
-    type: 'circle',
-    source: 'points',
-    paint: {
-      'circle-radius': [
-        'interpolate',
-        ['exponential', 1.5], // base for exponential curve
-        ['zoom'],
-        4,
-        1,
-        8,
-        3,
-      ],
-      'circle-stroke-width': 3,
-      'circle-stroke-opacity': 0,
-      'circle-color': '#be123c',
-      'circle-opacity': 0.75,
-    },
-  });
+//   // points
+//   const points = generatePoints(500000);
+//   map.addSource('points', {
+//     type: 'geojson',
+//     data: points,
+//   });
+//   map.addLayer({
+//     id: 'points',
+//     type: 'circle',
+//     source: 'points',
+//     paint: {
+//       'circle-radius': [
+//         'interpolate',
+//         ['exponential', 1.5], // base for exponential curve
+//         ['zoom'],
+//         4,
+//         1,
+//         8,
+//         3,
+//       ],
+//       'circle-stroke-width': 3,
+//       'circle-stroke-opacity': 0,
+//       'circle-color': '#be123c',
+//       'circle-opacity': 0.75,
+//     },
+//   });
 
-  // Add kabupaten labels
-  map.addSource('kabupaten-labels', {
-    type: 'geojson',
-    data: kabupatenLabelPoints,
-  });
+//   // Add kabupaten labels
+//   map.addSource('kabupaten-labels', {
+//     type: 'geojson',
+//     data: kabupatenLabelPoints,
+//   });
 
-  map.addLayer({
-    id: 'kabupaten-labels',
-    type: 'symbol',
-    source: 'kabupaten-labels',
-    layout: {
-      'text-field': ['get', 'shapeName'],
-      'text-padding': 3,
-      'text-size': [
-        'interpolate',
-        ['exponential', 1.5], // base for exponential curve
-        ['zoom'],
-        4,
-        9,
-        8,
-        12,
-      ],
-      'text-allow-overlap': false,
-      'text-ignore-placement': false,
-      'symbol-placement': 'point',
-      'symbol-avoid-edges': true,
-      'text-optional': true,
-    },
-    paint: {
-      'text-color': '#222',
-      'text-halo-color': '#fff',
-      'text-halo-width': 1,
-      'text-opacity': ['step', ['zoom'], 0, 6, 1],
-    },
-  });
+//   map.addLayer({
+//     id: 'kabupaten-labels',
+//     type: 'symbol',
+//     source: 'kabupaten-labels',
+//     layout: {
+//       'text-field': ['get', 'shapeName'],
+//       'text-padding': 3,
+//       'text-size': [
+//         'interpolate',
+//         ['exponential', 1.5], // base for exponential curve
+//         ['zoom'],
+//         4,
+//         9,
+//         8,
+//         12,
+//       ],
+//       'text-allow-overlap': false,
+//       'text-ignore-placement': false,
+//       'symbol-placement': 'point',
+//       'symbol-avoid-edges': true,
+//       'text-optional': true,
+//     },
+//     paint: {
+//       'text-color': '#222',
+//       'text-halo-color': '#fff',
+//       'text-halo-width': 1,
+//       'text-opacity': ['step', ['zoom'], 0, 6, 1],
+//     },
+//   });
 
-  // Add province labels
-  map.addSource('province-labels', {
-    type: 'geojson',
-    data: provinceLabelPoints,
-  });
+//   // Add province labels
+//   map.addSource('province-labels', {
+//     type: 'geojson',
+//     data: provinceLabelPoints,
+//   });
 
-  map.addLayer({
-    id: 'province-labels',
-    type: 'symbol',
-    source: 'province-labels',
-    layout: {
-      'text-font': ['Open Sans Semibold'],
-      'text-field': ['get', 'shapeName'], // Get the province name from properties
-      'text-padding': 4,
-      'text-size': 12,
-      'text-allow-overlap': false,
-      'text-ignore-placement': false,
-      'symbol-placement': 'point',
-      'symbol-avoid-edges': true,
-      'text-optional': true,
-    },
-    paint: {
-      'text-color': 'black',
-      'text-halo-color': '#fff',
-      'text-halo-width': 1,
-    },
-  });
+//   map.addLayer({
+//     id: 'province-labels',
+//     type: 'symbol',
+//     source: 'province-labels',
+//     layout: {
+//       'text-font': ['Open Sans Semibold'],
+//       'text-field': ['get', 'shapeName'], // Get the province name from properties
+//       'text-padding': 4,
+//       'text-size': 12,
+//       'text-allow-overlap': false,
+//       'text-ignore-placement': false,
+//       'symbol-placement': 'point',
+//       'symbol-avoid-edges': true,
+//       'text-optional': true,
+//     },
+//     paint: {
+//       'text-color': 'black',
+//       'text-halo-color': '#fff',
+//       'text-halo-width': 1,
+//     },
+//   });
 
-  // for (const point of points.features) {
-  //   const [lat, lon] = point.geometry.coordinates;
-  // }
+//   // for (const point of points.features) {
+//   //   const [lat, lon] = point.geometry.coordinates;
+//   // }
 
-  map.on('mouseenter', 'kabupaten', (e) => {
-    if (e.features && e.features[0]) {
-      console.log(e.features);
-      map.setFeatureState({ source: 'kabupaten', id: (e.features[0].properties as any).shapeID }, { hover: true });
-    }
-  });
+//   map.on('mouseenter', 'kabupaten', (e) => {
+//     if (e.features && e.features[0]) {
+//       console.log(e.features);
+//       map.setFeatureState({ source: 'kabupaten', id: (e.features[0].properties as any).shapeID }, { hover: true });
+//     }
+//   });
 
-  map.on('mouseenter', 'points', (e) => {
-    map.getCanvas().style.cursor = 'pointer';
+//   map.on('mouseenter', 'points', (e) => {
+//     map.getCanvas().style.cursor = 'pointer';
 
-    if (e.features && e.features[0]) {
-      const coordinates = (e.features[0].geometry as GeoJSON.Point).coordinates.slice();
-      const kabupaten = (e.features[0].properties as any).kabupaten || 'Unknown';
-      const province = (e.features[0].properties as any).province || 'Unknown';
+//     if (e.features && e.features[0]) {
+//       const coordinates = (e.features[0].geometry as GeoJSON.Point).coordinates.slice();
+//       const kabupaten = (e.features[0].properties as any).kabupaten || 'Unknown';
+//       const province = (e.features[0].properties as any).province || 'Unknown';
 
-      popup
-        .setLngLat(coordinates as [number, number])
-        .setHTML(`<strong>Kabupaten:</strong> ${kabupaten}<br><strong>Province:</strong> ${province}`)
-        .addTo(map);
-    }
-  });
+//       popup
+//         .setLngLat(coordinates as [number, number])
+//         .setHTML(`<strong>Kabupaten:</strong> ${kabupaten}<br><strong>Province:</strong> ${province}`)
+//         .addTo(map);
+//     }
+//   });
 
-  map.on('mouseleave', 'points', () => {
-    map.getCanvas().style.cursor = '';
-    popup.remove();
-  });
-});
+//   map.on('mouseleave', 'points', () => {
+//     map.getCanvas().style.cursor = '';
+//     popup.remove();
+//   });
+// });
