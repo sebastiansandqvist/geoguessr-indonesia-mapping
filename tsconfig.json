@@ -14,6 +14,10 @@
     "verbatimModuleSyntax": true,
     "noEmit": true,
 
+    /* solidjs */
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+
     /* linting */
     "strict": true,
     "forceConsistentCasingInFileNames": true,
