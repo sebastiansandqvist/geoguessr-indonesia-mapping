@@ -17,7 +17,6 @@ for (const point of points.features) {
     province: point.properties.province,
     latitude,
     longitude,
-    hasStreetviewCoverage: 0,
   };
   await db.insert(pointsTable).values(p);
   i++;

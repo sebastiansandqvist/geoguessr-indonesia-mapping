@@ -28,12 +28,18 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 // coords are usually 4,387m from one another
 const radius = 4380 / 2;
 
+console.log('next stage');
+
 const results = await db.query.points.findMany({
-  where(points, { eq }) {
-    return eq(points.kabupaten, 'Nias Utara');
+  where(points, { isNull }) {
+    return isNull(points.hasStreetviewCoverage);
     // return eq(points.province, 'North Sumatra');
   },
 });
+
+console.log(results.length);
+
+await wait(1000);
 
 let i = 0;
 for (const { id, latitude, longitude } of results) {
@@ -46,14 +52,20 @@ for (const { id, latitude, longitude } of results) {
   url.searchParams.set('key', key);
 
   const res = await fetch(url.toString());
-  console.log(i, res.status);
+  if (i % 100 === 0) {
+    console.log(i);
+  }
+
+  if (res.status !== 200 || !res.ok) {
+    console.log(res);
+  }
 
   if (res.ok) {
     const json = await res.json();
     await db
       .update(pointsTable)
       .set({
-        hasStreetviewCoverage: json.status === 'OK' ? 1 : 0,
+        hasStreetviewCoverage: json.status === 'OK',
         svDate: json.date,
         svCopyright: json.copyright,
         svLatitude: json.location?.lat,
@@ -65,7 +77,7 @@ for (const { id, latitude, longitude } of results) {
     await db
       .update(pointsTable)
       .set({
-        hasStreetviewCoverage: 0,
+        hasStreetviewCoverage: false,
       })
       .where(eq(pointsTable.id, id));
   }

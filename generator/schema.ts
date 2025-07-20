@@ -6,7 +6,9 @@ export const pointsTable = sqliteTable('points', {
   province: text().notNull(),
   latitude: real().notNull(),
   longitude: real().notNull(),
-  hasStreetviewCoverage: int('boolean'),
+  hasStreetviewCoverage: int({
+    mode: 'boolean',
+  }),
   svCopyright: text(),
   svLatitude: real(),
   svLongitude: real(),
