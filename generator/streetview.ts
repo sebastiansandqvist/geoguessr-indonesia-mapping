@@ -25,23 +25,19 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // console.log(r?.data?.results[0]?.elevation);
 
-// coords are ~3.8mi or 6.2km from one another
-const radius = 6200 / 2;
+// coords are usually 4,387m from one another
+const radius = 4380 / 2;
 
 const results = await db.query.points.findMany({
   where(points, { eq }) {
-    // return eq(points.kabupaten, 'Nias Utara');
-    return eq(points.province, 'North Sumatra');
+    return eq(points.kabupaten, 'Nias Utara');
+    // return eq(points.province, 'North Sumatra');
   },
 });
 
 let i = 0;
 for (const { id, latitude, longitude } of results) {
   // ?size=600x300&fov=90&heading=235&pitch=10
-  // metadata:
-  // const url = `https://maps.googleapis.com/maps/api/streetview/metadata?location=${latitude},${longitude}&key=${key}`;
-
-  // const url = `https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${latitude},${longitude}&key=${key}&radius=${radius}`;
   const url = new URL('https://maps.googleapis.com/maps/api/streetview/metadata');
   url.searchParams.set('location', `${latitude},${longitude}`);
   url.searchParams.set('radius', `${radius}`);
